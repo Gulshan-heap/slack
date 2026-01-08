@@ -1,5 +1,5 @@
-// import { useQueryState } from "nuqs";
+import { useQueryState } from "nuqs";
 
-// export const useParentMessageId = () => {
-//   return useQueryState("parentMessageId");
-// };
+export const useParentMessageId = () => {
+  return useQueryState("parentMessageId");
+};

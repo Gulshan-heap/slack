@@ -1,10 +1,10 @@
-// import { useQuery } from "convex/react";
+import { useQuery } from "convex/react";
 
-// import { api } from "../../../../convex/_generated/api";
+import { api } from "../../../../convex/_generated/api";
 
-// export const useGetWorkspaces = () => {
-//   const data = useQuery(api.workspaces.get);
-//   const isLoading = data === undefined;
+export const useGetWorkspaces = () => {
+  const data = useQuery(api.workspaces.get);
+  const isLoading = data === undefined;
 
-//   return { data, isLoading };
-// };
+  return { data, isLoading };
+};

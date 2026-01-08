@@ -1,15 +1,15 @@
-// "use client";
+"use client";
 
-// import { Provider } from "jotai";
+import { Provider } from "jotai";
 
-// interface JotaiProviderProps {
-//   children: React.ReactNode;
-// };
+interface JotaiProviderProps {
+  children: React.ReactNode;
+};
 
-// export const JotaiProvider = ({ children }: JotaiProviderProps) => {
-//   return (
-//     <Provider>
-//       {children}
-//     </Provider>
-//   );
-// };
+export const JotaiProvider = ({ children }: JotaiProviderProps) => {
+  return (
+    <Provider>
+      {children}
+    </Provider>
+  );
+};
