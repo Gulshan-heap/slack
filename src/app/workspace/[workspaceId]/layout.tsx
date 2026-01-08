@@ -1,8 +1,14 @@
 "use client";
+import { useEffect } from "react";
 import { Loader } from "lucide-react";
 
 import { Thread } from "@/features/messages/components/thread";
 import { Profile } from "@/features/members/components/profile";
+
+import { useEnsureBotMember } from "@/features/members/api/use-ensure-bot-member";
+import { useCreateOrGetConversation } from "@/features/conversations/api/use-create-or-get-conversation";
+import { useWorkspaceId } from "@/hooks/use-workspace-id";
+
 
 import {
   ResizableHandle,
@@ -24,7 +30,34 @@ interface WorkspaceIdLayoutProps {
 const WorkspaceIdLayout = ({ children }: WorkspaceIdLayoutProps) => {
   const { parentMessageId, profileMemberId, onClose } = usePanel();
 
+  const workspaceId = useWorkspaceId(); 
+  const ensureBotMember = useEnsureBotMember();
+  const createOrGetConversationMutation = useCreateOrGetConversation();
+
+
+
   const showPanel = !!parentMessageId || !!profileMemberId;
+
+    useEffect(() => {
+  if (!workspaceId) return;
+
+  const setupSlackBot = async () => {
+    try {
+      const botMemberId = await ensureBotMember({ workspaceId });
+
+      await createOrGetConversationMutation({
+        memberId: botMemberId,
+        workspaceId,
+      });
+    } catch (error) {
+      console.error("SlackBot setup failed:", error);
+    }
+  };
+
+  setupSlackBot();
+}, [workspaceId, ensureBotMember, createOrGetConversationMutation]);
+
+
 
   return (
     <div className="h-full">

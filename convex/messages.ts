@@ -4,6 +4,9 @@ import { paginationOptsValidator } from "convex/server";
 import { auth } from "./auth";
 import { Doc, Id } from "./_generated/dataModel";
 import { mutation, query, QueryCtx } from "./_generated/server";
+import { api } from "./_generated/api";
+
+
 
 const populateThread = async (ctx: QueryCtx, messageId: Id<"messages">) => {
   const messages = await ctx.db
@@ -369,6 +372,67 @@ export const create = mutation({
       parentMessageId: args.parentMessageId,
     });
 
+    // 🤖 AI AUTO REPLY IF DM WITH BOT
+if (_conversationId) {
+  const conversation = await ctx.db.get(_conversationId);
+
+  if (conversation) {
+    const otherMemberId =
+      conversation.memberOneId === member._id
+        ? conversation.memberTwoId
+        : conversation.memberOneId;
+
+    const otherMember = await ctx.db.get(otherMemberId);
+
+    if (otherMember) {
+      const otherUser = await ctx.db.get(otherMember.userId);
+
+      if (otherUser?.isBot) {
+        await ctx.scheduler.runAfter(0,api.ai.reply, {
+          prompt: args.body,
+          conversationId: _conversationId,
+          workspaceId: args.workspaceId,
+        });
+      }
+    }
+  }
+}
+
+
+
     return messageId;
+  },
+});
+
+export const insertBotMessage = mutation({
+  args: {
+    body: v.string(),
+    conversationId: v.id("conversations"),
+    workspaceId: v.id("workspaces"),
+  },
+  handler: async (ctx, args) => {
+
+    const botUser = await ctx.db
+      .query("users")
+      .filter(q => q.eq(q.field("isBot"), true))
+      .unique();
+
+    if (!botUser) throw new Error("Bot not found");
+
+    const member = await ctx.db
+      .query("members")
+      .withIndex("by_workspace_id_user_id", q =>
+        q.eq("workspaceId", args.workspaceId).eq("userId", botUser._id)
+      )
+      .unique();
+
+    if (!member) throw new Error("Bot not member");
+
+    await ctx.db.insert("messages", {
+      body: args.body,
+      memberId: member._id,
+      workspaceId: args.workspaceId,
+      conversationId: args.conversationId,
+    });
   },
 });

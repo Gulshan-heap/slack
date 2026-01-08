@@ -27,6 +27,10 @@ export const WorkspaceSidebar = () => {
   const { data: channels, isLoading: channelsLoading } = useGetChannels({ workspaceId });
   const { data: members, isLoading: membersLoading } = useGetMembers({ workspaceId });
 
+  const botMember = members?.find((m) => m.user.isBot);
+  const normalMembers = members?.filter((m) => !m.user.isBot);
+
+
   if (workspaceLoading || memberLoading) {
     return (
       <div className="flex flex-col bg-[#5E2C5F] h-full items-center justify-center">
@@ -81,15 +85,27 @@ export const WorkspaceSidebar = () => {
         hint="New direct message"
         // onNew={() => {}}
       >
-        {members?.map((item) => (
-          <UserItem
-            key={item._id}
-            id={item._id}
-            label={item.user.name}
-            image={item.user.image}
-            variant={item._id === memberId ? "active" : "default"}
-          />
-        ))}
+        {/* 🤖 SlackBot */}
+    {botMember && (
+      <UserItem
+        id={botMember._id}
+        label="SlackBot 🤖"
+        image={botMember.user.image}
+        variant={botMember._id === memberId ? "active" : "default"}
+      />
+    )}
+
+    {/* 👥 Normal users */}
+    {normalMembers?.map((item) => (
+      <UserItem
+        key={item._id}
+        id={item._id}
+        label={item.user.name}
+        image={item.user.image}
+        variant={item._id === memberId ? "active" : "default"}
+      />
+    ))}
+
       </WorkspaceSection>
     </div>
   )

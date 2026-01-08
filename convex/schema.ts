@@ -4,6 +4,16 @@ import { defineSchema, defineTable } from "convex/server";
 
 const schema = defineSchema({
   ...authTables,
+  users: defineTable({
+  name: v.optional(v.string()),
+  image: v.optional(v.string()),
+  email: v.optional(v.string()),
+  emailVerificationTime: v.optional(v.number()),
+  tokenIdentifier: v.optional(v.string()),
+  // only for bot user
+  isBot: v.optional(v.boolean()),
+}),
+
   workspaces: defineTable({
     name: v.string(),
     userId: v.id("users"),
