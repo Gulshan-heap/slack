@@ -395,8 +395,6 @@ export const create = mutation({
           if (otherUser?.isBot) {
             console.log("⏳ Scheduling AI reply...");
 
-            await ctx.scheduler.runAfter(0, api.test.ping);
-
             await ctx.scheduler.runAfter(0, api.ai.reply, {
               prompt: args.body,
               conversationId: _conversationId,

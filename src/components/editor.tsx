@@ -151,15 +151,20 @@ const Editor = ({
 
   // ✅ Emoji insert at cursor position
   const onEmojiSelect = (emojiValue: string) => {
-    const quill = quillRef.current;
-    if (!quill) return;
+  const quill = quillRef.current;
+  if (!quill) return;
 
-    const index = cursorIndex ?? quill.getLength();
+  // Ensure editor regains focus
+  quill.focus();
 
-    quill.insertText(index, emojiValue);
-    quill.setSelection(index + emojiValue.length);
-    quill.focus();
-  };
+  // Get current selection or fallback to end of text
+  const range = quill.getSelection(true);
+  const index = range ? range.index : quill.getLength();
+
+  quill.insertText(index, emojiValue);
+  quill.setSelection(index + emojiValue.length, 0);
+};
+
 
   const isEmpty = !image && text.replace(/<(.|\n)*?>/g, "").trim().length === 0;
 
