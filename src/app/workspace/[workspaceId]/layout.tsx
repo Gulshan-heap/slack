@@ -9,7 +9,6 @@ import { useEnsureBotMember } from "@/features/members/api/use-ensure-bot-member
 import { useCreateOrGetConversation } from "@/features/conversations/api/use-create-or-get-conversation";
 import { useWorkspaceId } from "@/hooks/use-workspace-id";
 
-
 import {
   ResizableHandle,
   ResizablePanel,
@@ -25,39 +24,35 @@ import { Id } from "../../../../convex/_generated/dataModel";
 
 interface WorkspaceIdLayoutProps {
   children: React.ReactNode;
-};
+}
 
 const WorkspaceIdLayout = ({ children }: WorkspaceIdLayoutProps) => {
   const { parentMessageId, profileMemberId, onClose } = usePanel();
 
-  const workspaceId = useWorkspaceId(); 
+  const workspaceId = useWorkspaceId();
   const ensureBotMember = useEnsureBotMember();
   const createOrGetConversationMutation = useCreateOrGetConversation();
 
-
-
   const showPanel = !!parentMessageId || !!profileMemberId;
 
-    useEffect(() => {
-  if (!workspaceId) return;
+  useEffect(() => {
+    if (!workspaceId) return;
 
-  const setupSlackBot = async () => {
-    try {
-      const botMemberId = await ensureBotMember({ workspaceId });
+    const setupSlackBot = async () => {
+      try {
+        const botMemberId = await ensureBotMember({ workspaceId });
 
-      await createOrGetConversationMutation({
-        memberId: botMemberId,
-        workspaceId,
-      });
-    } catch (error) {
-      console.error("SlackBot setup failed:", error);
-    }
-  };
+        createOrGetConversationMutation.mutate({
+          memberId: botMemberId,
+          workspaceId,
+        });
+      } catch (error) {
+        console.error("SlackBot setup failed:", error);
+      }
+    };
 
-  setupSlackBot();
-}, [workspaceId, ensureBotMember, createOrGetConversationMutation]);
-
-
+    setupSlackBot();
+  }, [workspaceId, ensureBotMember, createOrGetConversationMutation]);
 
   return (
     <div className="h-full">
@@ -84,11 +79,11 @@ const WorkspaceIdLayout = ({ children }: WorkspaceIdLayoutProps) => {
               <ResizableHandle withHandle />
               <ResizablePanel minSize={20} defaultSize={29}>
                 {parentMessageId ? (
-                 <Thread
+                  <Thread
                     messageId={parentMessageId as Id<"messages">}
                     onClose={onClose}
-                 />
-                )  : profileMemberId ? (
+                  />
+                ) : profileMemberId ? (
                   <Profile
                     memberId={profileMemberId as Id<"members">}
                     onClose={onClose}
