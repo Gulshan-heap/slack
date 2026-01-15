@@ -41,6 +41,7 @@ const Editor = ({
   const [text, setText] = useState("");
   const [image, setImage] = useState<File | null>(null);
   const [isToolbarVisible, setIsToolbarVisible] = useState(true);
+  const [cursorIndex, setCursorIndex] = useState<number | null>(null); // ✅ cursor tracking
   
   const submitRef = useRef(onSubmit);
   const placeholderRef = useRef(placeholder);
@@ -87,7 +88,7 @@ const Editor = ({
                 if (isEmpty) return;
                 
                 const body = JSON.stringify(quill.getContents());
-                submitRef.current?.({ body, image: addedImage })
+                submitRef.current?.({ body, image: addedImage });
               }
             },
             shift_enter: {
@@ -117,8 +118,16 @@ const Editor = ({
       setText(quill.getText());
     });
 
+    // ✅ Track cursor position
+    quill.on("selection-change", (range) => {
+      if (range) {
+        setCursorIndex(range.index);
+      }
+    });
+
     return () => {
       quill.off(Quill.events.TEXT_CHANGE);
+      quill.off("selection-change");
       if (container) {
         container.innerHTML = "";
       }
@@ -140,10 +149,16 @@ const Editor = ({
     }
   };
 
+  // ✅ Emoji insert at cursor position
   const onEmojiSelect = (emojiValue: string) => {
     const quill = quillRef.current;
+    if (!quill) return;
 
-    quill?.insertText(quill?.getSelection()?.index || 0, emojiValue);
+    const index = cursorIndex ?? quill.getLength();
+
+    quill.insertText(index, emojiValue);
+    quill.setSelection(index + emojiValue.length);
+    quill.focus();
   };
 
   const isEmpty = !image && text.replace(/<(.|\n)*?>/g, "").trim().length === 0;
@@ -233,7 +248,7 @@ const Editor = ({
                   onSubmit({
                     body: JSON.stringify(quillRef.current?.getContents()),
                     image,
-                  })
+                  });
                 }}
                 size="sm"
                 className="bg-[#007a5a] hover:bg-[#007a5a]/80 text-white"
@@ -249,7 +264,7 @@ const Editor = ({
                 onSubmit({
                   body: JSON.stringify(quillRef.current?.getContents()),
                   image,
-                })
+                });
               }}
               size="iconSm"
               className={cn(

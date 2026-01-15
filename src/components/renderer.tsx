@@ -20,7 +20,19 @@ const Renderer = ({ value }: RendererProps) => {
 
     quill.enable(false);
 
-    const contents = JSON.parse(value);
+    let contents;
+
+    try {
+      contents = JSON.parse(value);
+    } catch (err) {
+      console.warn("⚠️ Invalid Quill JSON, falling back to plain text:", value);
+
+      // Fallback: treat value as plain text
+      contents = {
+        ops: [{ insert: value + "\n" }],
+      };
+    }
+
     quill.setContents(contents);
 
     const isEmpty = quill.getText().replace(/<(.|\n)*?>/g, "").trim().length === 0;

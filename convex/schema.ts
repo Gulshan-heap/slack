@@ -12,7 +12,8 @@ const schema = defineSchema({
   tokenIdentifier: v.optional(v.string()),
   // only for bot user
   isBot: v.optional(v.boolean()),
-}),
+})
+ .index("by_isBot",["isBot"]),
 
   workspaces: defineTable({
     name: v.string(),

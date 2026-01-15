@@ -6,12 +6,10 @@ import { Doc, Id } from "./_generated/dataModel";
 import { mutation, query, QueryCtx } from "./_generated/server";
 import { api } from "./_generated/api";
 
-
-
 const populateThread = async (ctx: QueryCtx, messageId: Id<"messages">) => {
   const messages = await ctx.db
     .query("messages")
-    .withIndex("by_parent_message_id", (q) => 
+    .withIndex("by_parent_message_id", (q) =>
       q.eq("parentMessageId", messageId)
     )
     .collect();
@@ -63,14 +61,14 @@ const populateMember = (ctx: QueryCtx, memberId: Id<"members">) => {
 };
 
 const getMember = async (
-  ctx: QueryCtx, 
-  workspaceId: Id<"workspaces">, 
+  ctx: QueryCtx,
+  workspaceId: Id<"workspaces">,
   userId: Id<"users">
 ) => {
   return ctx.db
     .query("members")
-    .withIndex("by_workspace_id_user_id", (q) => 
-      q.eq("workspaceId", workspaceId).eq("userId", userId),
+    .withIndex("by_workspace_id_user_id", (q) =>
+      q.eq("workspaceId", workspaceId).eq("userId", userId)
     )
     .unique();
 };
@@ -183,9 +181,7 @@ export const getById = query({
 
     const dedupedReactions = reactionsWithCounts.reduce(
       (acc, reaction) => {
-        const existingReaction = acc.find(
-          (r) => r.value === reaction.value,
-        );
+        const existingReaction = acc.find((r) => r.value === reaction.value);
 
         if (existingReaction) {
           existingReaction.memberIds = Array.from(
@@ -204,7 +200,7 @@ export const getById = query({
     );
 
     const reactionsWithoutMemberIdProperty = dedupedReactions.map(
-      ({ memberId, ...rest }) => rest,
+      ({ memberId, ...rest }) => rest
     );
 
     return {
@@ -247,7 +243,7 @@ export const get = query({
 
     const results = await ctx.db
       .query("messages")
-      .withIndex("by_channel_id_parent_message_id_conversation_id", (q) => 
+      .withIndex("by_channel_id_parent_message_id_conversation_id", (q) =>
         q
           .eq("channelId", args.channelId)
           .eq("parentMessageId", args.parentMessageId)
@@ -277,14 +273,15 @@ export const get = query({
             const reactionsWithCounts = reactions.map((reaction) => {
               return {
                 ...reaction,
-                count: reactions.filter((r) => r.value === reaction.value).length,
+                count: reactions.filter((r) => r.value === reaction.value)
+                  .length,
               };
             });
 
             const dedupedReactions = reactionsWithCounts.reduce(
               (acc, reaction) => {
                 const existingReaction = acc.find(
-                  (r) => r.value === reaction.value,
+                  (r) => r.value === reaction.value
                 );
 
                 if (existingReaction) {
@@ -304,7 +301,7 @@ export const get = query({
             );
 
             const reactionsWithoutMemberIdProperty = dedupedReactions.map(
-              ({ memberId, ...rest }) => rest,
+              ({ memberId, ...rest }) => rest
             );
 
             return {
@@ -322,7 +319,7 @@ export const get = query({
         )
       ).filter(
         (message): message is NonNullable<typeof message> => message !== null
-      )
+      ),
     };
   },
 });
@@ -337,7 +334,8 @@ export const create = mutation({
     parentMessageId: v.optional(v.id("messages")),
   },
   handler: async (ctx, args) => {
-		const userId = await auth.getUserId(ctx);
+    console.log("📩 message.create called:", args.body);
+    const userId = await auth.getUserId(ctx);
 
     if (!userId) {
       throw new Error("Unauthorized");
@@ -349,56 +347,65 @@ export const create = mutation({
       throw new Error("Unauthorized");
     }
 
-		let _conversationId = args.conversationId;
+    // 🔒 Prevent bot from triggering itself
+    const senderUser = await ctx.db.get(member.userId);
+    if (!senderUser) throw new Error("User not found");
 
-   	// Only possible if we are replying in a thread in 1:1 conversation
-		if (!args.conversationId && !args.channelId && args.parentMessageId) {
-			const parentMessage = await ctx.db.get(args.parentMessageId);
+    let _conversationId = args.conversationId;
 
-			if (!parentMessage) {
-				throw new Error("Parent message not found");
-			}
+    // Only possible if we are replying in a thread in 1:1 conversation
+    if (!args.conversationId && !args.channelId && args.parentMessageId) {
+      const parentMessage = await ctx.db.get(args.parentMessageId);
 
-			_conversationId = parentMessage.conversationId;
-		}
+      if (!parentMessage) {
+        throw new Error("Parent message not found");
+      }
+
+      _conversationId = parentMessage.conversationId;
+    }
 
     const messageId = await ctx.db.insert("messages", {
       memberId: member._id,
       body: args.body,
       image: args.image,
       channelId: args.channelId,
-			conversationId: _conversationId,
+      conversationId: _conversationId,
       workspaceId: args.workspaceId,
       parentMessageId: args.parentMessageId,
     });
 
     // 🤖 AI AUTO REPLY IF DM WITH BOT
-if (_conversationId) {
-  const conversation = await ctx.db.get(_conversationId);
+    if (_conversationId && !senderUser.isBot) {
+      console.log("🧠 In conversation, checking other member");
+      const conversation = await ctx.db.get(_conversationId);
 
-  if (conversation) {
-    const otherMemberId =
-      conversation.memberOneId === member._id
-        ? conversation.memberTwoId
-        : conversation.memberOneId;
+      if (conversation) {
+        const otherMemberId =
+          conversation.memberOneId === member._id
+            ? conversation.memberTwoId
+            : conversation.memberOneId;
 
-    const otherMember = await ctx.db.get(otherMemberId);
+        const otherMember = await ctx.db.get(otherMemberId);
 
-    if (otherMember) {
-      const otherUser = await ctx.db.get(otherMember.userId);
+        if (otherMember) {
+          const otherUser = await ctx.db.get(otherMember.userId);
 
-      if (otherUser?.isBot) {
-        await ctx.scheduler.runAfter(0,api.ai.reply, {
-          prompt: args.body,
-          conversationId: _conversationId,
-          workspaceId: args.workspaceId,
-        });
+          console.log("🧠 Other user is bot:", otherUser?.isBot);
+
+          if (otherUser?.isBot) {
+            console.log("⏳ Scheduling AI reply...");
+
+            await ctx.scheduler.runAfter(0, api.test.ping);
+
+            await ctx.scheduler.runAfter(0, api.ai.reply, {
+              prompt: args.body,
+              conversationId: _conversationId,
+              workspaceId: args.workspaceId,
+            });
+          }
+        }
       }
     }
-  }
-}
-
-
 
     return messageId;
   },
@@ -411,17 +418,16 @@ export const insertBotMessage = mutation({
     workspaceId: v.id("workspaces"),
   },
   handler: async (ctx, args) => {
-
     const botUser = await ctx.db
       .query("users")
-      .filter(q => q.eq(q.field("isBot"), true))
-      .unique();
+      .withIndex("by_isBot", (q: any) => q.eq("isBot", true))
+      .first();
 
     if (!botUser) throw new Error("Bot not found");
 
     const member = await ctx.db
       .query("members")
-      .withIndex("by_workspace_id_user_id", q =>
+      .withIndex("by_workspace_id_user_id", (q: any) =>
         q.eq("workspaceId", args.workspaceId).eq("userId", botUser._id)
       )
       .unique();
@@ -434,5 +440,7 @@ export const insertBotMessage = mutation({
       workspaceId: args.workspaceId,
       conversationId: args.conversationId,
     });
+
+    console.log("🤖 Bot message inserted");
   },
 });
