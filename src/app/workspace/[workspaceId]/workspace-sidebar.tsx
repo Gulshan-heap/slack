@@ -102,6 +102,7 @@ export const WorkspaceSidebar = () => {
         id={item._id}
         label={item.user.name}
         image={item.user.image}
+        lastSeen={item.lastSeen}
         variant={item._id === memberId ? "active" : "default"}
       />
     ))}

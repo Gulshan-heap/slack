@@ -40,6 +40,7 @@ export const Conversation = ({ id }: ConversationProps) => {
       <Header
         memberName={member?.user.name}
         memberImage={member?.user.image}
+        lastSeen={member?.lastSeen}
         onClick={() => onOpenProfile(memberId)}
       />
       <MessageList

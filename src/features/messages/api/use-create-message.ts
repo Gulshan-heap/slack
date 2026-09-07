@@ -4,10 +4,12 @@ import { useCallback, useMemo, useState } from "react";
 import { api } from "../../../../convex/_generated/api";
 import { Doc, Id } from "../../../../convex/_generated/dataModel";
 
-type RequestType = { 
-  body: string, 
+type RequestType = {
+  body: string,
   workspaceId: Id<"workspaces">,
-  image?: Id<"_storage">, 
+  image?: Id<"_storage">,
+  audio?: Id<"_storage">,
+  audioDuration?: number,
   channelId?: Id<"channels">,
   parentMessageId?: Id<"messages">,
   conversationId?: Id<"conversations">,

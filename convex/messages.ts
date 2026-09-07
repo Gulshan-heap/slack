@@ -5,6 +5,7 @@ import { auth } from "./auth";
 import { Doc, Id } from "./_generated/dataModel";
 import { mutation, query, QueryCtx } from "./_generated/server";
 import { api } from "./_generated/api";
+import { recordMessageActivity } from "./wellness";
 
 const populateThread = async (ctx: QueryCtx, messageId: Id<"messages">) => {
   const messages = await ctx.db
@@ -208,6 +209,9 @@ export const getById = query({
       image: message.image
         ? await ctx.storage.getUrl(message.image)
         : undefined,
+      audio: message.audio
+        ? await ctx.storage.getUrl(message.audio)
+        : undefined,
       user,
       member,
       reactions: reactionsWithoutMemberIdProperty,
@@ -269,6 +273,9 @@ export const get = query({
             const image = message.image
               ? await ctx.storage.getUrl(message.image)
               : undefined;
+            const audio = message.audio
+              ? await ctx.storage.getUrl(message.audio)
+              : undefined;
 
             const reactionsWithCounts = reactions.map((reaction) => {
               return {
@@ -307,6 +314,7 @@ export const get = query({
             return {
               ...message,
               image,
+              audio,
               member,
               user,
               reactions: reactionsWithoutMemberIdProperty,
@@ -328,6 +336,8 @@ export const create = mutation({
   args: {
     body: v.string(),
     image: v.optional(v.id("_storage")),
+    audio: v.optional(v.id("_storage")),
+    audioDuration: v.optional(v.number()),
     workspaceId: v.id("workspaces"),
     channelId: v.optional(v.id("channels")),
     conversationId: v.optional(v.id("conversations")),
@@ -364,15 +374,28 @@ export const create = mutation({
       _conversationId = parentMessage.conversationId;
     }
 
+    const createdAt = Date.now();
+
     const messageId = await ctx.db.insert("messages", {
       memberId: member._id,
       body: args.body,
       image: args.image,
+      audio: args.audio,
+      audioDuration: args.audioDuration,
       channelId: args.channelId,
       conversationId: _conversationId,
       workspaceId: args.workspaceId,
       parentMessageId: args.parentMessageId,
     });
+
+    if (!senderUser.isBot) {
+      await recordMessageActivity(ctx, {
+        workspaceId: args.workspaceId,
+        memberId: member._id,
+        body: args.body,
+        createdAt,
+      });
+    }
 
     // 🤖 AI AUTO REPLY IF DM WITH BOT
     if (_conversationId && !senderUser.isBot) {

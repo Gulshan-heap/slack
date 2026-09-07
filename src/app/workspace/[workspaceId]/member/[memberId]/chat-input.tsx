@@ -5,6 +5,7 @@ import { useRef, useState } from "react";
 
 import { useCreateMessage } from "@/features/messages/api/use-create-message";
 import { useGenerateUploadUrl } from "@/features/upload/api/use-generate-upload-url";
+import { VoiceRecorderButton } from "@/components/voice-recorder-button";
 
 import { useWorkspaceId } from "@/hooks/use-workspace-id";
 
@@ -22,6 +23,8 @@ type CreateMesageValues = {
   workspaceId: Id<"workspaces">;
   body: string;
   image: Id<"_storage"> | undefined;
+  audio?: Id<"_storage">;
+  audioDuration?: number;
 };
 
 export const ChatInput = ({ placeholder, conversationId }: ChatInputProps) => {
@@ -86,15 +89,55 @@ export const ChatInput = ({ placeholder, conversationId }: ChatInputProps) => {
     }
   };
 
+  const handleVoiceRecorded = async (blob: Blob, durationMs: number) => {
+    try {
+      setIsPending(true);
+
+      const url = await generateUploadUrl({}, { throwError: true });
+      if (!url) throw new Error("Url not found");
+
+      const result = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": blob.type },
+        body: blob,
+      });
+
+      if (!result.ok) throw new Error("Failed to upload voice message");
+
+      const { storageId } = await result.json();
+
+      await createMessage(
+        {
+          conversationId,
+          workspaceId,
+          body: JSON.stringify({ ops: [{ insert: "\n" }] }),
+          image: undefined,
+          audio: storageId,
+          audioDuration: durationMs,
+        },
+        { throwError: true }
+      );
+    } catch {
+      toast.error("Failed to send voice message");
+    } finally {
+      setIsPending(false);
+    }
+  };
+
   return (
-    <div className="px-5 w-full">
-      <Editor
-        key={editorKey}
-        placeholder={placeholder}
-        onSubmit={handleSubmit}
-        disabled={isPending}
-        innerRef={editorRef}
-      />
+    <div className="px-5 w-full flex items-end gap-x-2">
+      <div className="flex-1">
+        <Editor
+          key={editorKey}
+          placeholder={placeholder}
+          onSubmit={handleSubmit}
+          disabled={isPending}
+          innerRef={editorRef}
+        />
+      </div>
+      <div className="pb-2">
+        <VoiceRecorderButton onRecorded={handleVoiceRecorded} disabled={isPending} />
+      </div>
     </div>
   );
 };

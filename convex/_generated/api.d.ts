@@ -19,6 +19,7 @@ import type * as messages from "../messages.js";
 import type * as reactions from "../reactions.js";
 import type * as upload from "../upload.js";
 import type * as users from "../users.js";
+import type * as wellness from "../wellness.js";
 import type * as workspaces from "../workspaces.js";
 
 import type {
@@ -39,6 +40,7 @@ declare const fullApi: ApiFromModules<{
   reactions: typeof reactions;
   upload: typeof upload;
   users: typeof users;
+  wellness: typeof wellness;
   workspaces: typeof workspaces;
 }>;
 

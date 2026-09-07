@@ -28,7 +28,8 @@ const schema = defineSchema({
   members: defineTable({
     userId: v.id("users"),
     workspaceId: v.id("workspaces"),
-    role: v.union(v.literal("admin"), v.literal("member"))
+    role: v.union(v.literal("admin"), v.literal("member")),
+    lastSeen: v.optional(v.number()),
   })
     .index("by_user_id", ["userId"])
     .index("by_workspace_id", ["workspaceId"])
@@ -47,12 +48,15 @@ const schema = defineSchema({
   messages: defineTable({
     body: v.string(),
     image: v.optional(v.id("_storage")),
+    audio: v.optional(v.id("_storage")),
+    audioDuration: v.optional(v.number()),
     memberId: v.id("members"),
     workspaceId: v.id("workspaces"),
     channelId: v.optional(v.id("channels")),
     parentMessageId: v.optional(v.id("messages")),
     conversationId: v.optional(v.id("conversations")),
     updatedAt: v.optional(v.number()),
+    sentiment: v.optional(v.number()),
   })
     .index("by_workspace_id", ["workspaceId"])
     .index("by_member_id", ["memberId"])
@@ -72,7 +76,20 @@ const schema = defineSchema({
   })
     .index("by_workspace_id", ["workspaceId"])
     .index("by_message_id", ["messageId"])
-    .index("by_member_id", ["memberId"])
+    .index("by_member_id", ["memberId"]),
+
+  memberActivityDaily: defineTable({
+    workspaceId: v.id("workspaces"),
+    memberId: v.id("members"),
+    date: v.string(), // "yyyy-MM-dd", UTC
+    messageCount: v.number(),
+    sentimentSum: v.number(),
+    negativeCount: v.number(),
+    lateNightCount: v.number(),
+  })
+    .index("by_workspace_id_date", ["workspaceId", "date"])
+    .index("by_member_id_date", ["memberId", "date"])
+    .index("by_workspace_id_member_id_date", ["workspaceId", "memberId", "date"]),
 });
 
 export default schema;

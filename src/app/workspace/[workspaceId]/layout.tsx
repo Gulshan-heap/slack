@@ -8,6 +8,7 @@ import { Profile } from "@/features/members/components/profile";
 import { useEnsureBotMember } from "@/features/members/api/use-ensure-bot-member";
 import { useCreateOrGetConversation } from "@/features/conversations/api/use-create-or-get-conversation";
 import { useWorkspaceId } from "@/hooks/use-workspace-id";
+import { usePresenceHeartbeat } from "@/hooks/use-presence-heartbeat";
 
 import {
   ResizableHandle,
@@ -32,6 +33,8 @@ const WorkspaceIdLayout = ({ children }: WorkspaceIdLayoutProps) => {
   const workspaceId = useWorkspaceId();
   const ensureBotMember = useEnsureBotMember();
   const createOrGetConversationMutation = useCreateOrGetConversation();
+
+  usePresenceHeartbeat(workspaceId);
 
   const showPanel = !!parentMessageId || !!profileMemberId;
 

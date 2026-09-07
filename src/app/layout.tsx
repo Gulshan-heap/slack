@@ -4,6 +4,7 @@ import { ConvexAuthNextjsServerProvider } from "@convex-dev/auth/nextjs/server";
 import { NuqsAdapter } from "nuqs/adapters/next/app";
 
 import { Modals } from "@/components/modals";
+import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { JotaiProvider } from "@/components/jotai-provider";
 import { ConvexClientProvider } from "@/components/convex-client-provider";
@@ -24,17 +25,24 @@ export default function RootLayout({
 }>) {
   return (
     <ConvexAuthNextjsServerProvider>
-      <html lang="en">
+      <html lang="en" suppressHydrationWarning>
         <body className={inter.className}>
-          <NuqsAdapter>
-            <ConvexClientProvider>
-              <JotaiProvider>
-                <Toaster />
-                <Modals />
-                {children}
-              </JotaiProvider>
-            </ConvexClientProvider>
-          </NuqsAdapter>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange
+          >
+            <NuqsAdapter>
+              <ConvexClientProvider>
+                <JotaiProvider>
+                  <Toaster />
+                  <Modals />
+                  {children}
+                </JotaiProvider>
+              </ConvexClientProvider>
+            </NuqsAdapter>
+          </ThemeProvider>
         </body>
       </html>
     </ConvexAuthNextjsServerProvider>

@@ -13,6 +13,7 @@ import { useConfirm } from "@/hooks/use-confirm";
 import { Hint } from "./hint";
 import { Toolbar } from "./toolbar";
 import { Thumbnail } from "./thumbnail";
+import { VoiceMessage } from "./voice-message";
 import { Reactions } from "./reactions";
 import { ThreadBar } from "./thread-bar";
 import { Avatar, AvatarImage, AvatarFallback } from "./ui/avatar";
@@ -36,6 +37,8 @@ interface MessageProps {
   >;
   body: Doc<"messages">["body"];
   image: string | null | undefined;
+  audio?: string | null;
+  audioDuration?: number;
   createdAt: Doc<"messages">["_creationTime"];
   updatedAt: Doc<"messages">["updatedAt"];
   isEditing: boolean;
@@ -61,6 +64,8 @@ export const Message = ({
   reactions,
   body,
   image,
+  audio,
+  audioDuration,
   createdAt,
   updatedAt,
   isEditing,
@@ -154,6 +159,7 @@ export const Message = ({
               <div className="flex flex-col w-full">
                 <Renderer value={body} />
                 <Thumbnail url={image} />
+                <VoiceMessage url={audio} durationMs={audioDuration} />
                 {updatedAt ? (
                   <span className="text-xs text-muted-foreground">
                     (edited)
@@ -231,6 +237,7 @@ export const Message = ({
               </div>
               <Renderer value={body} />
               <Thumbnail url={image} />
+              <VoiceMessage url={audio} durationMs={audioDuration} />
               {updatedAt ? (
                 <span className="text-xs text-muted-foreground">(edited)</span>
               ) : null}
