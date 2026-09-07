@@ -1,9 +1,10 @@
-import { Loader, Plus } from "lucide-react";
+import { LogIn, Loader, Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 import { useGetWorkspace } from "@/features/workspaces/api/use-get-workspace";
 import { useGetWorkspaces } from "@/features/workspaces/api/use-get-workspaces";
 import { useCreateWorkspaceModal } from "@/features/workspaces/store/use-create-workspace-modal";
+import { useJoinWorkspaceModal } from "@/features/workspaces/store/use-join-workspace-modal";
 
 import { Button } from "@/components/ui/button";
 import { useWorkspaceId } from "@/hooks/use-workspace-id";
@@ -19,6 +20,7 @@ export const WorkspaceSwitcher = () => {
   const router = useRouter();
   const workspaceId = useWorkspaceId();
   const [_open, setOpen] = useCreateWorkspaceModal();
+  const [, setJoinOpen] = useJoinWorkspaceModal();
   
   const { data: workspaces, isLoading: workspacesLoading } = useGetWorkspaces();
   const { data: workspace, isLoading: workspaceLoading } = useGetWorkspace({ 
@@ -70,6 +72,15 @@ export const WorkspaceSwitcher = () => {
             <Plus />
           </div>
           Create a new workspace
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          className="cursor-pointer"
+          onClick={() => setJoinOpen(true)}
+        >
+          <div className="size-9 relative overflow-hidden bg-[#F2F2F2] text-slate-800 font-semibold text-lg rounded-md flex items-center justify-center mr-2">
+            <LogIn className="size-4" />
+          </div>
+          Join a workspace
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

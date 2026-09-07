@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils";
 import { Hint } from "./hint";
 import { Button } from "./ui/button";
 import { EmojiPopover } from "./emoji-popover";
+import { VoiceRecorderButton } from "./voice-recorder-button";
 
 import "quill/dist/quill.snow.css";
 
@@ -22,6 +23,7 @@ type EditorValue = {
 interface EditorProps {
   onSubmit: ({ image, body }: EditorValue) => void;
   onCancel?: () => void;
+  onRecordVoice?: (blob: Blob, durationMs: number) => void;
   placeholder?: string;
   defaultValue?: Delta | Op[];
   disabled?: boolean;
@@ -32,6 +34,7 @@ interface EditorProps {
 const Editor = ({
   onCancel,
   onSubmit,
+  onRecordVoice,
   placeholder = "Write something...",
   defaultValue = [],
   disabled = false,
@@ -236,6 +239,9 @@ const Editor = ({
                 <ImageIcon className="size-4" />
               </Button>
             </Hint>
+          )}
+          {variant === "create" && onRecordVoice && (
+            <VoiceRecorderButton onRecorded={onRecordVoice} disabled={disabled} />
           )}
           {variant === "update" && (
             <div className="ml-auto flex items-center gap-x-2">

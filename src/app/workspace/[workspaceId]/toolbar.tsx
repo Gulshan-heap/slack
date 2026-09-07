@@ -7,6 +7,7 @@ import { useGetMembers } from "@/features/members/api/use-get-members";
 import { useGetChannels } from "@/features/channels/api/use-get-channels";
 import { useGetWorkspace } from "@/features/workspaces/api/use-get-workspace";
 import { useCommandPalette } from "@/features/workspaces/store/use-command-palette";
+import { usePreferencesModal } from "@/features/workspaces/store/use-preferences-modal";
 
 import { Button } from "@/components/ui/button";
 import { Hint } from "@/components/hint";
@@ -33,6 +34,7 @@ export const Toolbar = () => {
   const { data: members } = useGetMembers({ workspaceId });
 
   const [open, setOpen] = useCommandPalette();
+  const [, setPreferencesOpen] = usePreferencesModal();
 
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
@@ -102,9 +104,15 @@ export const Toolbar = () => {
           </Button>
         </Hint>
         <ThemeToggle />
-        <Button variant="transparent" size="iconSm">
-          <Info className="size-5 text-white" />
-        </Button>
+        <Hint label="Workspace details">
+          <Button
+            variant="transparent"
+            size="iconSm"
+            onClick={() => setPreferencesOpen(true)}
+          >
+            <Info className="size-5 text-white" />
+          </Button>
+        </Hint>
       </div>
     </nav>
   );

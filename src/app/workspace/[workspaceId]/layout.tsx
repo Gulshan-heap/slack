@@ -32,7 +32,7 @@ const WorkspaceIdLayout = ({ children }: WorkspaceIdLayoutProps) => {
 
   const workspaceId = useWorkspaceId();
   const ensureBotMember = useEnsureBotMember();
-  const createOrGetConversationMutation = useCreateOrGetConversation();
+  const { mutate: createOrGetConversation } = useCreateOrGetConversation();
 
   usePresenceHeartbeat(workspaceId);
 
@@ -45,7 +45,7 @@ const WorkspaceIdLayout = ({ children }: WorkspaceIdLayoutProps) => {
       try {
         const botMemberId = await ensureBotMember({ workspaceId });
 
-        createOrGetConversationMutation.mutate({
+        createOrGetConversation({
           memberId: botMemberId,
           workspaceId,
         });
@@ -55,7 +55,10 @@ const WorkspaceIdLayout = ({ children }: WorkspaceIdLayoutProps) => {
     };
 
     setupSlackBot();
-  }, [workspaceId, ensureBotMember, createOrGetConversationMutation]);
+    // ensureBotMember/createOrGetConversation are stable convex mutation
+    // refs; only re-run this when the workspace actually changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [workspaceId]);
 
   return (
     <div className="h-full">

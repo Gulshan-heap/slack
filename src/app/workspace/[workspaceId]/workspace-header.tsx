@@ -11,6 +11,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useCommandPalette } from "@/features/workspaces/store/use-command-palette";
+import { usePreferencesModal } from "@/features/workspaces/store/use-preferences-modal";
 
 import { InviteModal } from "./invite-modal";
 import { PreferencesModal } from "./preferences-modal";
@@ -23,7 +24,7 @@ interface WorkspaceHeaderProps {
 
 export const WorkspaceHeader = ({ workspace, isAdmin }: WorkspaceHeaderProps) => {
   const [inviteOpen, setInviteOpen] = useState(false);
-  const [preferencesOpen, setPreferencesOpen] = useState(false);
+  const [preferencesOpen, setPreferencesOpen] = usePreferencesModal();
   const [, setPaletteOpen] = useCommandPalette();
 
   return (

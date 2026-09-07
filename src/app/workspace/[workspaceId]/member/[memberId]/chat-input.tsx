@@ -5,7 +5,6 @@ import { useRef, useState } from "react";
 
 import { useCreateMessage } from "@/features/messages/api/use-create-message";
 import { useGenerateUploadUrl } from "@/features/upload/api/use-generate-upload-url";
-import { VoiceRecorderButton } from "@/components/voice-recorder-button";
 
 import { useWorkspaceId } from "@/hooks/use-workspace-id";
 
@@ -125,19 +124,15 @@ export const ChatInput = ({ placeholder, conversationId }: ChatInputProps) => {
   };
 
   return (
-    <div className="px-5 w-full flex items-end gap-x-2">
-      <div className="flex-1">
-        <Editor
-          key={editorKey}
-          placeholder={placeholder}
-          onSubmit={handleSubmit}
-          disabled={isPending}
-          innerRef={editorRef}
-        />
-      </div>
-      <div className="pb-2">
-        <VoiceRecorderButton onRecorded={handleVoiceRecorded} disabled={isPending} />
-      </div>
+    <div className="px-5 w-full">
+      <Editor
+        key={editorKey}
+        placeholder={placeholder}
+        onSubmit={handleSubmit}
+        onRecordVoice={handleVoiceRecorded}
+        disabled={isPending}
+        innerRef={editorRef}
+      />
     </div>
   );
 };

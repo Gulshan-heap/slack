@@ -13,11 +13,13 @@ import { Button } from "@/components/ui/button";
 
 import { useCreateWorkspace } from "../api/use-create-workspace";
 import { useCreateWorkspaceModal } from "../store/use-create-workspace-modal";
+import { useJoinWorkspaceModal } from "../store/use-join-workspace-modal";
 
 export const CreateWorkspaceModal = () => {
   const router = useRouter();
   const [name, setName] = useState("");
   const [open, setOpen] = useCreateWorkspaceModal();
+  const [, setJoinOpen] = useJoinWorkspaceModal();
 
   const { mutate, isPending } = useCreateWorkspace();
 
@@ -54,7 +56,17 @@ export const CreateWorkspaceModal = () => {
             minLength={3}
             placeholder="Workspace name e.g. 'Work', 'Personal', 'Home'"
           />
-          <div className="flex justify-end">
+          <div className="flex items-center justify-between">
+            <button
+              type="button"
+              onClick={() => {
+                handleClose();
+                setJoinOpen(true);
+              }}
+              className="text-xs text-muted-foreground hover:underline"
+            >
+              Have an invite code? Join a workspace
+            </button>
             <Button disabled={isPending}>
               Create
             </Button>

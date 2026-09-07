@@ -24,7 +24,7 @@ const schema = defineSchema({
     name: v.string(),
     userId: v.id("users"),
     joinCode: v.string(),
-  }),
+  }).index("by_join_code", ["joinCode"]),
   members: defineTable({
     userId: v.id("users"),
     workspaceId: v.id("workspaces"),
