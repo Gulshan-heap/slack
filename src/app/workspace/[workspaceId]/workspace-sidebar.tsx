@@ -1,3 +1,4 @@
+import { toast } from "sonner";
 import { AlertTriangle, HashIcon, Loader, MessageSquareText, SendHorizontal } from "lucide-react";
 
 import { useGetMembers } from "@/features/members/api/use-get-members";
@@ -54,16 +55,20 @@ export const WorkspaceSidebar = () => {
     <div className="flex flex-col bg-[#5E2C5F] h-full">
       <WorkspaceHeader workspace={workspace} isAdmin={member.role === "admin"} />
       <div className="flex flex-col px-2 mt-3">
-        <SidebarItem
-          label="Threads"
-          icon={MessageSquareText}
-          id="threads"
-        />
-        <SidebarItem
-          label="Drafts & Sent"
-          icon={SendHorizontal}
-          id="drafts"
-        />
+        <button
+          onClick={() => toast.info("Threads view isn't available yet")}
+          className="flex items-center gap-1.5 justify-start font-normal h-7 px-[18px] text-sm overflow-hidden text-[#f9edffcc] hover:bg-white/10 rounded-md w-full"
+        >
+          <MessageSquareText className="size-3.5 mr-1 shrink-0" />
+          <span className="text-sm truncate">Threads</span>
+        </button>
+        <button
+          onClick={() => toast.info("Drafts & Sent isn't available yet")}
+          className="flex items-center gap-1.5 justify-start font-normal h-7 px-[18px] text-sm overflow-hidden text-[#f9edffcc] hover:bg-white/10 rounded-md w-full"
+        >
+          <SendHorizontal className="size-3.5 mr-1 shrink-0" />
+          <span className="text-sm truncate">Drafts & Sent</span>
+        </button>
       </div>
       <WorkspaceSection
         label="Channels"

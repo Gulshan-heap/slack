@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ChevronDown, ListFilter, SquarePen } from "lucide-react";
+import { ChevronDown, SquarePen } from "lucide-react";
 
 import { Hint } from "@/components/hint";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useCommandPalette } from "@/features/workspaces/store/use-command-palette";
 
 import { InviteModal } from "./invite-modal";
 import { PreferencesModal } from "./preferences-modal";
@@ -23,6 +24,7 @@ interface WorkspaceHeaderProps {
 export const WorkspaceHeader = ({ workspace, isAdmin }: WorkspaceHeaderProps) => {
   const [inviteOpen, setInviteOpen] = useState(false);
   const [preferencesOpen, setPreferencesOpen] = useState(false);
+  const [, setPaletteOpen] = useCommandPalette();
 
   return (
     <>
@@ -82,13 +84,12 @@ export const WorkspaceHeader = ({ workspace, isAdmin }: WorkspaceHeaderProps) =>
           </DropdownMenuContent>
         </DropdownMenu>
         <div className="flex items-center gap-0.5">
-          <Hint label="Filter conversations" side="bottom">
-            <Button variant="transparent" size="iconSm">
-              <ListFilter className="size-4" />
-            </Button>
-          </Hint>
           <Hint label="New message" side="bottom">
-            <Button variant="transparent" size="iconSm">
+            <Button
+              variant="transparent"
+              size="iconSm"
+              onClick={() => setPaletteOpen(true)}
+            >
               <SquarePen className="size-4" />
             </Button>
           </Hint>

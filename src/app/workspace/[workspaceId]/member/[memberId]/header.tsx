@@ -21,7 +21,7 @@ export const Header = ({
   const isOnline = useIsOnline(lastSeen);
 
   return (
-    <div className="bg-white border-b h-[49px] flex items-center px-4 overflow-hidden">
+    <div className="bg-background border-b h-[49px] flex items-center px-4 overflow-hidden">
       <Button
         variant="ghost"
         className="text-lg font-semibold px-2 overflow-hidden w-auto"

@@ -1,11 +1,12 @@
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { HeartPulse, Info, Search } from "lucide-react";
 
 import { useGetMembers } from "@/features/members/api/use-get-members";
 import { useGetChannels } from "@/features/channels/api/use-get-channels";
 import { useGetWorkspace } from "@/features/workspaces/api/use-get-workspace";
+import { useCommandPalette } from "@/features/workspaces/store/use-command-palette";
 
 import { Button } from "@/components/ui/button";
 import { Hint } from "@/components/hint";
@@ -31,7 +32,7 @@ export const Toolbar = () => {
   const { data: channels } = useGetChannels({ workspaceId });
   const { data: members } = useGetMembers({ workspaceId });
 
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useCommandPalette();
 
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
