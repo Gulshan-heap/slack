@@ -4,6 +4,7 @@ import dynamic from "next/dynamic";
 import { useRef, useState } from "react";
 
 import { useCreateMessage } from "@/features/messages/api/use-create-message";
+import { useComposerDraft } from "@/features/drafts/hooks/use-composer-draft";
 import { useGenerateUploadUrl } from "@/features/upload/api/use-generate-upload-url";
 
 import { useWorkspaceId } from "@/hooks/use-workspace-id";
@@ -36,6 +37,8 @@ export const ChatInput = ({ placeholder, conversationId }: ChatInputProps) => {
 
   const { mutate: createMessage } = useCreateMessage();
   const { mutate: generateUploadUrl } = useGenerateUploadUrl();
+
+  const draft = useComposerDraft({ workspaceId, conversationId });
 
   const handleSubmit = async ({
     body,
@@ -79,6 +82,7 @@ export const ChatInput = ({ placeholder, conversationId }: ChatInputProps) => {
 
       await createMessage(values, { throwError: true });
 
+      draft.clear();
       setEditorKey((prevKey) => prevKey + 1);
     } catch (error) {
       toast.error("Failed to send message");
@@ -123,12 +127,24 @@ export const ChatInput = ({ placeholder, conversationId }: ChatInputProps) => {
     }
   };
 
+  // Mounting before the draft loads would show an empty box and then
+  // overwrite the saved draft on the first keystroke.
+  if (!draft.isReady) {
+    return (
+      <div className="px-5 w-full">
+        <div className="h-[142px] rounded-md border border-slate-200 bg-white" />
+      </div>
+    );
+  }
+
   return (
     <div className="px-5 w-full">
       <Editor
         key={editorKey}
         placeholder={placeholder}
+        defaultValue={draft.defaultValue}
         onSubmit={handleSubmit}
+        onChange={draft.onChange}
         onRecordVoice={handleVoiceRecorded}
         disabled={isPending}
         innerRef={editorRef}

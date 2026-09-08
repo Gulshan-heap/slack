@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 
 import { auth } from "./auth";
+import { recordReaction } from "./activity";
 import { Id } from "./_generated/dataModel";
 import { mutation, QueryCtx } from "./_generated/server";
 
@@ -59,6 +60,12 @@ export const toggle = mutation({
         memberId: member._id,
         messageId: message._id,
         workspaceId: message.workspaceId
+      });
+
+      await recordReaction(ctx, {
+        message,
+        actorMemberId: member._id,
+        value: args.value,
       });
 
       return newReactionId;

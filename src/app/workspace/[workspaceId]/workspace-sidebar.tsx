@@ -1,4 +1,5 @@
-import { toast } from "sonner";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { AlertTriangle, HashIcon, Loader, MessageSquareText, SendHorizontal } from "lucide-react";
 
 import { useGetMembers } from "@/features/members/api/use-get-members";
@@ -7,6 +8,7 @@ import { useCurrentMember } from "@/features/members/api/use-current-member";
 import { useGetWorkspace } from "@/features/workspaces/api/use-get-workspace";
 import { useCreateChannelModal } from "@/features/channels/store/use-create-channel-modal";
 
+import { cn } from "@/lib/utils";
 import { useMemberId } from "@/hooks/use-member-id";
 import { useChannelId } from "@/hooks/use-channel-id";
 import { useWorkspaceId } from "@/hooks/use-workspace-id";
@@ -16,7 +18,11 @@ import { SidebarItem } from "./sidebar-item";
 import { WorkspaceHeader } from "./workspace-header";
 import { WorkspaceSection } from "./workspace-section";
 
+const NAV_LINK_CLASS =
+  "flex items-center gap-1.5 justify-start font-normal h-7 px-[18px] text-sm overflow-hidden text-[#f9edffcc] hover:bg-white/10 rounded-md w-full";
+
 export const WorkspaceSidebar = () => {
+  const pathname = usePathname();
   const memberId = useMemberId();
   const channelId = useChannelId();
   const workspaceId = useWorkspaceId();
@@ -55,20 +61,26 @@ export const WorkspaceSidebar = () => {
     <div className="flex flex-col bg-[#5E2C5F] h-full">
       <WorkspaceHeader workspace={workspace} isAdmin={member.role === "admin"} />
       <div className="flex flex-col px-2 mt-3">
-        <button
-          onClick={() => toast.info("Threads view isn't available yet")}
-          className="flex items-center gap-1.5 justify-start font-normal h-7 px-[18px] text-sm overflow-hidden text-[#f9edffcc] hover:bg-white/10 rounded-md w-full"
+        <Link
+          href={`/workspace/${workspaceId}/threads`}
+          className={cn(
+            NAV_LINK_CLASS,
+            pathname.endsWith("/threads") && "bg-white/10 text-white"
+          )}
         >
           <MessageSquareText className="size-3.5 mr-1 shrink-0" />
           <span className="text-sm truncate">Threads</span>
-        </button>
-        <button
-          onClick={() => toast.info("Drafts & Sent isn't available yet")}
-          className="flex items-center gap-1.5 justify-start font-normal h-7 px-[18px] text-sm overflow-hidden text-[#f9edffcc] hover:bg-white/10 rounded-md w-full"
+        </Link>
+        <Link
+          href={`/workspace/${workspaceId}/drafts`}
+          className={cn(
+            NAV_LINK_CLASS,
+            pathname.endsWith("/drafts") && "bg-white/10 text-white"
+          )}
         >
           <SendHorizontal className="size-3.5 mr-1 shrink-0" />
-          <span className="text-sm truncate">Drafts & Sent</span>
-        </button>
+          <span className="text-sm truncate">Drafts</span>
+        </Link>
       </div>
       <WorkspaceSection
         label="Channels"

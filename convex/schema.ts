@@ -79,6 +79,52 @@ const schema = defineSchema({
     .index("by_member_id", ["memberId"]),
 
   /**
+   * An unsent composer body, one row per member per channel/DM. Deleted when
+   * the message is sent or the composer is emptied.
+   */
+  drafts: defineTable({
+    workspaceId: v.id("workspaces"),
+    memberId: v.id("members"),
+    channelId: v.optional(v.id("channels")),
+    conversationId: v.optional(v.id("conversations")),
+    body: v.string(),
+    updatedAt: v.number(),
+  })
+    .index("by_member_id", ["memberId"])
+    .index("by_member_id_channel_id_conversation_id", [
+      "memberId",
+      "channelId",
+      "conversationId",
+    ]),
+
+  /**
+   * Things that happened to you: someone mentioned you, replied in your
+   * thread, or reacted to your message. Written by the mutation that causes
+   * them so the feed never has to scan the message table.
+   */
+  activity: defineTable({
+    workspaceId: v.id("workspaces"),
+    /** Recipient. */
+    memberId: v.id("members"),
+    actorMemberId: v.id("members"),
+    type: v.union(
+      v.literal("mention"),
+      v.literal("thread_reply"),
+      v.literal("reaction")
+    ),
+    messageId: v.id("messages"),
+    channelId: v.optional(v.id("channels")),
+    conversationId: v.optional(v.id("conversations")),
+    parentMessageId: v.optional(v.id("messages")),
+    /** Emoji, for reaction rows. */
+    value: v.optional(v.string()),
+    readAt: v.optional(v.number()),
+  })
+    .index("by_member_id", ["memberId"])
+    .index("by_member_id_read_at", ["memberId", "readAt"])
+    .index("by_message_id", ["messageId"]),
+
+  /**
    * A live huddle in a channel or DM. One row per call; `endedAt` is set when
    * the last participant leaves. `room` is the LiveKit room name.
    */

@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { ChevronDown, SquarePen } from "lucide-react";
 
 import { Hint } from "@/components/hint";
@@ -11,6 +10,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useCommandPalette } from "@/features/workspaces/store/use-command-palette";
+import { useInviteModal } from "@/features/workspaces/store/use-invite-modal";
 import { usePreferencesModal } from "@/features/workspaces/store/use-preferences-modal";
 
 import { InviteModal } from "./invite-modal";
@@ -23,7 +23,7 @@ interface WorkspaceHeaderProps {
 };
 
 export const WorkspaceHeader = ({ workspace, isAdmin }: WorkspaceHeaderProps) => {
-  const [inviteOpen, setInviteOpen] = useState(false);
+  const [inviteOpen, setInviteOpen] = useInviteModal();
   const [preferencesOpen, setPreferencesOpen] = usePreferencesModal();
   const [, setPaletteOpen] = useCommandPalette();
 

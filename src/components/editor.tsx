@@ -62,6 +62,8 @@ const readMentionQuery = (quill: Quill) => {
 interface EditorProps {
   onSubmit: ({ image, body }: EditorValue) => void;
   onCancel?: () => void;
+  /** Fires on every keystroke with the serialized Delta, for draft saving. */
+  onChange?: (body: string) => void;
   onRecordVoice?: (blob: Blob, durationMs: number) => void;
   placeholder?: string;
   defaultValue?: Delta | Op[];
@@ -73,6 +75,7 @@ interface EditorProps {
 const Editor = ({
   onCancel,
   onSubmit,
+  onChange,
   onRecordVoice,
   placeholder = "Write something...",
   defaultValue = [],
@@ -87,6 +90,7 @@ const Editor = ({
   const [activeMentionIndex, setActiveMentionIndex] = useState(0);
 
   const submitRef = useRef(onSubmit);
+  const changeRef = useRef(onChange);
   const placeholderRef = useRef(placeholder);
   const quillRef = useRef<Quill | null>(null);
   const defaultValueRef = useRef(defaultValue);
@@ -137,6 +141,7 @@ const Editor = ({
 
   useLayoutEffect(() => {
     submitRef.current = onSubmit;
+    changeRef.current = onChange;
     placeholderRef.current = placeholder;
     defaultValueRef.current = defaultValue;
     disabledRef.current = disabled;
@@ -254,6 +259,9 @@ const Editor = ({
     }
 
     quill.setContents(defaultValueRef.current);
+    // Restoring a draft otherwise leaves the caret at position 0, so the next
+    // keystroke lands in front of what you already wrote.
+    quill.setSelection(quill.getLength(), 0);
     setText(quill.getText());
 
     const syncMention = () => {
@@ -264,6 +272,7 @@ const Editor = ({
     quill.on(Quill.events.TEXT_CHANGE, () => {
       setText(quill.getText());
       syncMention();
+      changeRef.current?.(JSON.stringify(quill.getContents()));
     });
 
     quill.on(Quill.events.SELECTION_CHANGE, syncMention);

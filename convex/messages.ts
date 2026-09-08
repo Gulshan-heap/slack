@@ -6,6 +6,11 @@ import { Doc, Id } from "./_generated/dataModel";
 import { internalQuery, mutation, query, QueryCtx } from "./_generated/server";
 import { api } from "./_generated/api";
 import { deltaToText, recordMessageActivity } from "./wellness";
+import {
+  clearForMessage,
+  recordMentions,
+  recordThreadReply,
+} from "./activity";
 
 /** `@ai` anywhere in a message asks the assistant to reply in place. */
 const AI_MENTION_PATTERN = /(?:^|\s)@ai\b/i;
@@ -99,6 +104,8 @@ export const remove = mutation({
     if (!member || member._id !== message.memberId) {
       throw new Error("Unauthorized");
     }
+
+    await clearForMessage(ctx, args.id);
 
     await ctx.db.delete(args.id);
 
@@ -400,6 +407,24 @@ export const create = mutation({
       });
     }
 
+    const activitySource = {
+      workspaceId: args.workspaceId,
+      messageId,
+      actorMemberId: member._id,
+      channelId: args.channelId,
+      conversationId: _conversationId,
+      parentMessageId: args.parentMessageId,
+    };
+
+    await recordMentions(ctx, { ...activitySource, body: args.body });
+
+    if (args.parentMessageId) {
+      await recordThreadReply(ctx, {
+        ...activitySource,
+        parentMessageId: args.parentMessageId,
+      });
+    }
+
     // 🤖 AI AUTO REPLY — always in a DM with the bot, and anywhere someone
     // mentions @ai (channels and threads included).
     if (!senderUser.isBot) {
@@ -557,7 +582,7 @@ export const insertBotMessage = mutation({
 
     if (!member) throw new Error("Bot not member");
 
-    await ctx.db.insert("messages", {
+    const messageId = await ctx.db.insert("messages", {
       body: args.body,
       memberId: member._id,
       workspaceId: args.workspaceId,
@@ -565,6 +590,26 @@ export const insertBotMessage = mutation({
       conversationId: args.conversationId,
       parentMessageId: args.parentMessageId,
     });
+
+    // The assistant can address people by name, and its reply lands in a
+    // thread someone else started — both belong in their activity feed.
+    const activitySource = {
+      workspaceId: args.workspaceId,
+      messageId,
+      actorMemberId: member._id,
+      channelId: args.channelId,
+      conversationId: args.conversationId,
+      parentMessageId: args.parentMessageId,
+    };
+
+    await recordMentions(ctx, { ...activitySource, body: args.body });
+
+    if (args.parentMessageId) {
+      await recordThreadReply(ctx, {
+        ...activitySource,
+        parentMessageId: args.parentMessageId,
+      });
+    }
 
     console.log("🤖 Bot message inserted");
   },
