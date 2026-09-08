@@ -269,15 +269,39 @@ const Editor = ({
       setActiveMentionIndex(0);
     };
 
+    let mentionSyncTimer: ReturnType<typeof setTimeout> | null = null;
+
+    /**
+     * Plain typing reaches Quill through its MutationObserver, which emits
+     * `text-change` *before* syncing the selection — only keys Quill binds
+     * itself (Backspace, Enter, …) go through `modify()` and sync it first.
+     * So reading the caret synchronously here is a keystroke stale, and
+     * typing "@" would look at the text in front of it. Read it once the
+     * current task has settled instead, where it's always current.
+     */
+    const scheduleMentionSync = () => {
+      if (mentionSyncTimer !== null) {
+        clearTimeout(mentionSyncTimer);
+      }
+
+      mentionSyncTimer = setTimeout(() => {
+        mentionSyncTimer = null;
+        syncMention();
+      }, 0);
+    };
+
     quill.on(Quill.events.TEXT_CHANGE, () => {
       setText(quill.getText());
-      syncMention();
+      scheduleMentionSync();
       changeRef.current?.(JSON.stringify(quill.getContents()));
     });
 
     quill.on(Quill.events.SELECTION_CHANGE, syncMention);
 
     return () => {
+      if (mentionSyncTimer !== null) {
+        clearTimeout(mentionSyncTimer);
+      }
       quill.off(Quill.events.TEXT_CHANGE);
       quill.off(Quill.events.SELECTION_CHANGE);
       if (container) {
