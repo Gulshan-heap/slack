@@ -1,11 +1,27 @@
 "use node";
 
-import { v } from "convex/values";
+import { ConvexError, v } from "convex/values";
 import { AccessToken } from "livekit-server-sdk";
 
 import { action } from "./_generated/server";
 import { api, internal } from "./_generated/api";
 import { Doc } from "./_generated/dataModel";
+
+/** LiveKit keys and secrets are base64url-ish: printable ASCII, no spaces. */
+const CREDENTIAL_PATTERN = /^[\x21-\x7e]+$/;
+
+/**
+ * Catches a credential that was pasted from the dashboard's masked display
+ * (a run of `•`) or that picked up quotes/whitespace. Without this the token
+ * signs fine and LiveKit rejects it later with an opaque "invalid token".
+ */
+const assertUsableCredential = (name: string, value: string) => {
+  if (!CREDENTIAL_PATTERN.test(value)) {
+    throw new ConvexError(
+      `${name} does not look like a LiveKit credential. If you copied it from the dashboard, use "Reveal secret" first — the masked dots are not the value.`
+    );
+  }
+};
 
 /**
  * Mints a short-lived LiveKit access token for one call.
@@ -28,8 +44,17 @@ export const createToken = action({
     const url = process.env.LIVEKIT_URL;
 
     if (!apiKey || !apiSecret || !url) {
-      throw new Error(
+      throw new ConvexError(
         "LiveKit is not configured. Set LIVEKIT_API_KEY, LIVEKIT_API_SECRET and LIVEKIT_URL in the Convex environment."
+      );
+    }
+
+    assertUsableCredential("LIVEKIT_API_KEY", apiKey);
+    assertUsableCredential("LIVEKIT_API_SECRET", apiSecret);
+
+    if (!url.startsWith("ws://") && !url.startsWith("wss://")) {
+      throw new ConvexError(
+        `LIVEKIT_URL must start with wss:// (got "${url.slice(0, 8)}...").`
       );
     }
 
@@ -40,7 +65,7 @@ export const createToken = action({
     );
 
     if (!member) {
-      throw new Error("Unauthorized");
+      throw new ConvexError("You are not a member of this workspace");
     }
 
     const call: Doc<"calls"> | null = await ctx.runQuery(
@@ -49,11 +74,11 @@ export const createToken = action({
     );
 
     if (!call || call.workspaceId !== args.workspaceId) {
-      throw new Error("Call not found");
+      throw new ConvexError("Call not found");
     }
 
     if (call.endedAt) {
-      throw new Error("This call has already ended");
+      throw new ConvexError("This call has already ended");
     }
 
     const user: Doc<"users"> | null = await ctx.runQuery(api.users.current, {});

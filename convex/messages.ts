@@ -453,18 +453,48 @@ export const contextForAi = internalQuery({
     limit: v.number(),
   },
   handler: async (ctx, args) => {
+    const parent = args.parentMessageId
+      ? await ctx.db.get(args.parentMessageId)
+      : null;
+
+    // Thread replies are stored under their parent's channel/conversation, so
+    // a caller that knows only the parent id inherits both from it. Without
+    // this the index lookup below asks for `channelId === undefined` and
+    // matches nothing.
+    const channelId = args.channelId ?? parent?.channelId;
+    const conversationId = args.conversationId ?? parent?.conversationId;
+
     const recent = await ctx.db
       .query("messages")
       .withIndex("by_channel_id_parent_message_id_conversation_id", (q) =>
         q
-          .eq("channelId", args.channelId)
+          .eq("channelId", channelId)
           .eq("parentMessageId", args.parentMessageId)
-          .eq("conversationId", args.conversationId)
+          .eq("conversationId", conversationId)
       )
       .order("desc")
       .take(args.limit);
 
     const transcript: { author: string; text: string; isBot: boolean }[] = [];
+
+    // A thread summary that omits the message the thread hangs off reads as if
+    // it started mid-conversation, so seed the transcript with the root.
+    if (parent) {
+      const parentText = deltaToText(parent.body);
+
+      if (parentText) {
+        const parentAuthor = await populateMember(ctx, parent.memberId);
+        const parentUser = parentAuthor
+          ? await populateUser(ctx, parentAuthor.userId)
+          : null;
+
+        transcript.push({
+          author: parentUser?.name ?? "Someone",
+          text: parentText,
+          isBot: parentUser?.isBot === true,
+        });
+      }
+    }
 
     for (const message of recent.reverse()) {
       const text = deltaToText(message.body);

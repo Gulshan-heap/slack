@@ -9,6 +9,7 @@ interface CallRoomProps {
   serverUrl: string;
   token: string;
   onDisconnected: () => void;
+  onError: (error: Error) => void;
 }
 
 /**
@@ -19,6 +20,7 @@ export const CallRoom = ({
   serverUrl,
   token,
   onDisconnected,
+  onError,
 }: CallRoomProps) => {
   return (
     <LiveKitRoom
@@ -28,6 +30,7 @@ export const CallRoom = ({
       audio
       video
       onDisconnected={onDisconnected}
+      onError={onError}
       className="h-full w-full"
       data-lk-theme="default"
     >

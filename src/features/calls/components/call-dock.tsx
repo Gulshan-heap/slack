@@ -23,6 +23,22 @@ const CallRoom = dynamic(() => import("./call-room"), {
 });
 
 /**
+ * A `ConvexError` arrives with its payload on `data`; plain server errors are
+ * redacted in production, so fall back to a caller-supplied message.
+ */
+const readErrorMessage = (error: unknown, fallback: string) => {
+  const data = (error as { data?: unknown })?.data;
+
+  if (typeof data === "string" && data) return data;
+
+  const message = (error as { message?: unknown })?.message;
+
+  if (typeof message === "string" && message) return message;
+
+  return fallback;
+};
+
+/**
  * Floating huddle window. Rendered once by the workspace layout so a call
  * keeps running while you read other channels.
  */
@@ -69,10 +85,10 @@ export const CallDock = () => {
           setCredentials({ url: result.url, token: result.token });
         }
       })
-      .catch((error: Error) => {
+      .catch((error: unknown) => {
         if (cancelled) return;
 
-        toast.error(error.message || "Failed to join the huddle");
+        toast.error(readErrorMessage(error, "Failed to join the huddle"));
         handleLeave();
       });
 
@@ -141,6 +157,16 @@ export const CallDock = () => {
             serverUrl={credentials.url}
             token={credentials.token}
             onDisconnected={handleLeave}
+            onError={(error) => {
+              // Most often a credential mismatch: LiveKit reports it as
+              // "could not establish signal connection: invalid token".
+              toast.error(
+                /invalid token/i.test(error.message)
+                  ? "LiveKit rejected the token — check LIVEKIT_API_KEY and LIVEKIT_API_SECRET match the project behind LIVEKIT_URL."
+                  : error.message || "The huddle connection failed"
+              );
+              handleLeave();
+            }}
           />
         ) : (
           <div className="flex h-full items-center justify-center">
