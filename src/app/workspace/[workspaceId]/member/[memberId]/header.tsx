@@ -3,11 +3,16 @@ import { FaChevronDown } from "react-icons/fa";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useIsOnline } from "@/hooks/use-is-online";
+import { SummarizeButton } from "@/features/messages/components/summarize-button";
+import { HuddleButton } from "@/features/calls/components/huddle-button";
+
+import { Id } from "../../../../../../convex/_generated/dataModel";
 
 interface HeaderProps {
   memberName?: string;
   memberImage?: string;
   lastSeen?: number;
+  conversationId?: Id<"conversations">;
   onClick?: () => void;
 };
 
@@ -15,6 +20,7 @@ export const Header = ({
   memberName = "Member",
   memberImage,
   lastSeen,
+  conversationId,
   onClick,
 }: HeaderProps) => {
   const avatarFallback = memberName.charAt(0).toUpperCase();
@@ -30,7 +36,7 @@ export const Header = ({
       >
         <span className="relative mr-2 inline-flex shrink-0">
           <Avatar className="size-6">
-            <AvatarImage src={memberImage} />
+            <AvatarImage className="object-cover" src={memberImage} />
             <AvatarFallback>
               {avatarFallback}
             </AvatarFallback>
@@ -47,6 +53,10 @@ export const Header = ({
           {isOnline ? "Online" : "Offline"}
         </span>
       ) : null}
+      <div className="ml-auto flex shrink-0 items-center gap-x-1">
+        <HuddleButton title={memberName} conversationId={conversationId} />
+        <SummarizeButton title={memberName} conversationId={conversationId} />
+      </div>
     </div>
   );
 };

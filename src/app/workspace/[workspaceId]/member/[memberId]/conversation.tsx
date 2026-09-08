@@ -41,6 +41,7 @@ export const Conversation = ({ id }: ConversationProps) => {
         memberName={member?.user.name}
         memberImage={member?.user.image}
         lastSeen={member?.lastSeen}
+        conversationId={id}
         onClick={() => onOpenProfile(memberId)}
       />
       <MessageList

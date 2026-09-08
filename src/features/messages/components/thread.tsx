@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Message } from "@/components/message";
 import { useChannelId } from "@/hooks/use-channel-id";
 import { useWorkspaceId } from "@/hooks/use-workspace-id";
+import { SummarizeButton } from "@/features/messages/components/summarize-button";
 
 import { Id } from "../../../../convex/_generated/dataModel";
 
@@ -167,9 +168,12 @@ export const Thread = ({ messageId, onClose }: ThreadProps) => {
     <div className="h-full flex flex-col">
       <div className="h-[49px] flex justify-between items-center px-4 border-b">
         <p className="text-lg font-bold">Thread</p>
-        <Button onClick={onClose} size="iconSm" variant="ghost">
-          <XIcon className="size-5 stroke-[1.5]" />
-        </Button>
+        <div className="flex items-center gap-x-1">
+          <SummarizeButton title="this thread" parentMessageId={messageId} />
+          <Button onClick={onClose} size="iconSm" variant="ghost">
+            <XIcon className="size-5 stroke-[1.5]" />
+          </Button>
+        </div>
       </div>
       <div className="flex-1 flex flex-col-reverse pb-4 overflow-y-auto messages-scrollbar">
         {Object.entries(groupedMessages || {}).map(([dateKey, messages]) => (

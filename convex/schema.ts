@@ -78,6 +78,24 @@ const schema = defineSchema({
     .index("by_message_id", ["messageId"])
     .index("by_member_id", ["memberId"]),
 
+  /**
+   * A live huddle in a channel or DM. One row per call; `endedAt` is set when
+   * the last participant leaves. `room` is the LiveKit room name.
+   */
+  calls: defineTable({
+    workspaceId: v.id("workspaces"),
+    channelId: v.optional(v.id("channels")),
+    conversationId: v.optional(v.id("conversations")),
+    room: v.string(),
+    startedByMemberId: v.id("members"),
+    activeMemberIds: v.array(v.id("members")),
+    endedAt: v.optional(v.number()),
+  })
+    .index("by_workspace_id", ["workspaceId"])
+    .index("by_workspace_id_ended_at", ["workspaceId", "endedAt"])
+    .index("by_channel_id_ended_at", ["channelId", "endedAt"])
+    .index("by_conversation_id_ended_at", ["conversationId", "endedAt"]),
+
   memberActivityDaily: defineTable({
     workspaceId: v.id("workspaces"),
     memberId: v.id("members"),

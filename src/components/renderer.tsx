@@ -1,6 +1,10 @@
 import Quill from "quill";
 import { useEffect, useRef, useState } from "react";
 
+import { registerMentionFormat } from "@/lib/quill-mention";
+
+registerMentionFormat();
+
 interface RendererProps {
   value: string;
 };
@@ -49,7 +53,14 @@ const Renderer = ({ value }: RendererProps) => {
 
   if (isEmpty) return null;
 
-  return <div ref={rendererRef} className="ql-editor ql-renderer" />
+  // The `ql-snow` wrapper matters: quill.snow.css scopes headings, quotes,
+  // code blocks and links under `.ql-snow .ql-editor`, so without it a
+  // rendered message loses the formatting the composer showed.
+  return (
+    <div className="ql-snow">
+      <div ref={rendererRef} className="ql-editor ql-renderer" />
+    </div>
+  );
 };
 
 export default Renderer;

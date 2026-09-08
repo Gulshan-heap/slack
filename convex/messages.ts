@@ -3,9 +3,12 @@ import { paginationOptsValidator } from "convex/server";
 
 import { auth } from "./auth";
 import { Doc, Id } from "./_generated/dataModel";
-import { mutation, query, QueryCtx } from "./_generated/server";
+import { internalQuery, mutation, query, QueryCtx } from "./_generated/server";
 import { api } from "./_generated/api";
-import { recordMessageActivity } from "./wellness";
+import { deltaToText, recordMessageActivity } from "./wellness";
+
+/** `@ai` anywhere in a message asks the assistant to reply in place. */
+const AI_MENTION_PATTERN = /(?:^|\s)@ai\b/i;
 
 const populateThread = async (ctx: QueryCtx, messageId: Id<"messages">) => {
   const messages = await ctx.db
@@ -397,34 +400,38 @@ export const create = mutation({
       });
     }
 
-    // 🤖 AI AUTO REPLY IF DM WITH BOT
-    if (_conversationId && !senderUser.isBot) {
-      console.log("🧠 In conversation, checking other member");
-      const conversation = await ctx.db.get(_conversationId);
+    // 🤖 AI AUTO REPLY — always in a DM with the bot, and anywhere someone
+    // mentions @ai (channels and threads included).
+    if (!senderUser.isBot) {
+      const prompt = deltaToText(args.body);
+      let isBotDm = false;
 
-      if (conversation) {
-        const otherMemberId =
-          conversation.memberOneId === member._id
-            ? conversation.memberTwoId
-            : conversation.memberOneId;
+      if (_conversationId) {
+        const conversation = await ctx.db.get(_conversationId);
 
-        const otherMember = await ctx.db.get(otherMemberId);
+        if (conversation) {
+          const otherMemberId =
+            conversation.memberOneId === member._id
+              ? conversation.memberTwoId
+              : conversation.memberOneId;
 
-        if (otherMember) {
-          const otherUser = await ctx.db.get(otherMember.userId);
+          const otherMember = await ctx.db.get(otherMemberId);
+          const otherUser = otherMember
+            ? await ctx.db.get(otherMember.userId)
+            : null;
 
-          console.log("🧠 Other user is bot:", otherUser?.isBot);
-
-          if (otherUser?.isBot) {
-            console.log("⏳ Scheduling AI reply...");
-
-            await ctx.scheduler.runAfter(0, api.ai.reply, {
-              prompt: args.body,
-              conversationId: _conversationId,
-              workspaceId: args.workspaceId,
-            });
-          }
+          isBotDm = otherUser?.isBot === true;
         }
+      }
+
+      if (isBotDm || AI_MENTION_PATTERN.test(prompt)) {
+        await ctx.scheduler.runAfter(0, api.ai.reply, {
+          prompt,
+          workspaceId: args.workspaceId,
+          channelId: args.channelId,
+          conversationId: _conversationId,
+          parentMessageId: args.parentMessageId,
+        });
       }
     }
 
@@ -432,23 +439,88 @@ export const create = mutation({
   },
 });
 
+/**
+ * Recent messages plus the workspace roster, for the AI actions. Internal
+ * because it deliberately skips the auth check — the scheduled AI reply runs
+ * without a user identity. Callers reachable by users must authorize first.
+ */
+export const contextForAi = internalQuery({
+  args: {
+    workspaceId: v.id("workspaces"),
+    channelId: v.optional(v.id("channels")),
+    conversationId: v.optional(v.id("conversations")),
+    parentMessageId: v.optional(v.id("messages")),
+    limit: v.number(),
+  },
+  handler: async (ctx, args) => {
+    const recent = await ctx.db
+      .query("messages")
+      .withIndex("by_channel_id_parent_message_id_conversation_id", (q) =>
+        q
+          .eq("channelId", args.channelId)
+          .eq("parentMessageId", args.parentMessageId)
+          .eq("conversationId", args.conversationId)
+      )
+      .order("desc")
+      .take(args.limit);
+
+    const transcript: { author: string; text: string; isBot: boolean }[] = [];
+
+    for (const message of recent.reverse()) {
+      const text = deltaToText(message.body);
+
+      if (!text) continue;
+
+      const author = await populateMember(ctx, message.memberId);
+      const user = author ? await populateUser(ctx, author.userId) : null;
+
+      transcript.push({
+        author: user?.name ?? "Someone",
+        text,
+        isBot: user?.isBot === true,
+      });
+    }
+
+    const workspaceMembers = await ctx.db
+      .query("members")
+      .withIndex("by_workspace_id", (q) =>
+        q.eq("workspaceId", args.workspaceId)
+      )
+      .collect();
+
+    const roster: string[] = [];
+
+    for (const workspaceMember of workspaceMembers) {
+      const user = await populateUser(ctx, workspaceMember.userId);
+
+      if (user?.name && !user.isBot) {
+        roster.push(user.name);
+      }
+    }
+
+    return { transcript, roster };
+  },
+});
+
 export const insertBotMessage = mutation({
   args: {
     body: v.string(),
-    conversationId: v.id("conversations"),
     workspaceId: v.id("workspaces"),
+    channelId: v.optional(v.id("channels")),
+    conversationId: v.optional(v.id("conversations")),
+    parentMessageId: v.optional(v.id("messages")),
   },
   handler: async (ctx, args) => {
     const botUser = await ctx.db
       .query("users")
-      .withIndex("by_isBot", (q: any) => q.eq("isBot", true))
+      .withIndex("by_isBot", (q) => q.eq("isBot", true))
       .first();
 
     if (!botUser) throw new Error("Bot not found");
 
     const member = await ctx.db
       .query("members")
-      .withIndex("by_workspace_id_user_id", (q: any) =>
+      .withIndex("by_workspace_id_user_id", (q) =>
         q.eq("workspaceId", args.workspaceId).eq("userId", botUser._id)
       )
       .unique();
@@ -459,7 +531,9 @@ export const insertBotMessage = mutation({
       body: args.body,
       memberId: member._id,
       workspaceId: args.workspaceId,
+      channelId: args.channelId,
       conversationId: args.conversationId,
+      parentMessageId: args.parentMessageId,
     });
 
     console.log("🤖 Bot message inserted");

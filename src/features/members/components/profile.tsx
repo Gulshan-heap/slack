@@ -1,13 +1,14 @@
 import Link from "next/link";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
-import { AlertTriangle, ChevronDownIcon, Loader, MailIcon, XIcon } from "lucide-react";
+import { AlertTriangle, ChevronDownIcon, Loader, MailIcon, Settings, XIcon } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { useConfirm } from "@/hooks/use-confirm";
 import { Separator } from "@/components/ui/separator";
 import { useWorkspaceId } from "@/hooks/use-workspace-id";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useProfileSettingsModal } from "@/features/auth/store/use-profile-settings-modal";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -31,6 +32,7 @@ interface ProfileProps {
 export const Profile = ({ memberId, onClose }: ProfileProps) => {
   const router = useRouter();
   const workspaceId = useWorkspaceId();
+  const [, setProfileSettingsOpen] = useProfileSettingsModal();
 
   const [UpdateDialog, confirmUpdate] = useConfirm(
     "Change role",
@@ -151,14 +153,25 @@ export const Profile = ({ memberId, onClose }: ProfileProps) => {
         </div>
         <div className="flex flex-col items-center justify-center p-4">
           <Avatar className="max-w-[256px] max-h-[256px] size-full">
-            <AvatarImage src={member.user.image} />
+            <AvatarImage className="object-cover" src={member.user.image} />
             <AvatarFallback className="aspect-square text-6xl">
               {avatarFallback}
             </AvatarFallback>
           </Avatar>
         </div>
         <div className="flex flex-col p-4">
-          <p className="tex-xl font-bold">{member.user.name}</p>
+          <p className="text-xl font-bold">{member.user.name}</p>
+          <p className="text-sm capitalize text-muted-foreground">{member.role}</p>
+          {currentMember?._id === memberId && (
+            <Button
+              onClick={() => setProfileSettingsOpen(true)}
+              variant="outline"
+              className="mt-4 w-full"
+            >
+              <Settings className="mr-2 size-4" />
+              Edit profile
+            </Button>
+          )}
           {currentMember?.role === "admin" &&
             currentMember?._id !== memberId ? (
               <div className="flex items-center gap-2 mt-4">

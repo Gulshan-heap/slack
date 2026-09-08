@@ -73,17 +73,47 @@ body,
   }
 }
 
+/* -------------------------------------------------------------------------
+   Quill
+   Tailwind's preflight and our own overrides used to flatten the inline
+   formats Quill produces (bold/italic/strike/underline, lists, quotes,
+   code), so every format is restated explicitly below. Keep the rules
+   scoped to `.ql-editor` so they cover both the composer and the
+   read-only message renderer.
+   ------------------------------------------------------------------------- */
+
 .ql-toolbar {
   border: none !important;
   background-color: hsl(var(--muted)) !important;
+  border-top-left-radius: calc(var(--radius) - 2px);
+  border-top-right-radius: calc(var(--radius) - 2px);
 }
 
-.ql-toolbar button .ql-stroke {
-  stroke: hsl(var(--foreground)) !important;
+/* Resting icon colour. Scoped with `:not(.ql-active)` so Quill's own
+   active/hover colours still win and the buttons read as toggles. */
+.ql-toolbar button:not(.ql-active):not(:hover) .ql-stroke,
+.ql-toolbar .ql-picker-label:not(.ql-active) .ql-stroke {
+  stroke: hsl(var(--foreground));
 }
 
-.ql-toolbar button .ql-fill {
-  fill: hsl(var(--foreground)) !important;
+.ql-toolbar button:not(.ql-active):not(:hover) .ql-fill,
+.ql-toolbar .ql-picker-label:not(.ql-active) .ql-fill {
+  fill: hsl(var(--foreground));
+}
+
+.ql-toolbar button.ql-active .ql-stroke,
+.ql-toolbar button:hover .ql-stroke {
+  stroke: #1264a3;
+}
+
+.ql-toolbar button.ql-active .ql-fill,
+.ql-toolbar button:hover .ql-fill {
+  fill: #1264a3;
+}
+
+.ql-toolbar button.ql-active {
+  background-color: hsl(var(--accent));
+  border-radius: 4px;
 }
 
 .ql-toolbar .ql-formats:not(:last-child) {
@@ -102,9 +132,30 @@ body,
   line-height: 22px !important;
   padding: 8px 12px !important;
   color: hsl(var(--foreground)) !important;
-  font-weight: 400 !important;
   font-family: "Lato", sans-serif !important;
   font-size: 14px !important;
+  font-weight: 400;
+}
+
+/* Inline formats. Tailwind's preflight resets some of these and our own
+   base `font-weight` used to cascade over the rest. */
+.ql-editor strong,
+.ql-editor b {
+  font-weight: 700;
+}
+
+.ql-editor em,
+.ql-editor i {
+  font-style: italic;
+}
+
+.ql-editor s,
+.ql-editor strike {
+  text-decoration: line-through;
+}
+
+.ql-editor u {
+  text-decoration: underline;
 }
 
 .ql-editor a {
@@ -113,6 +164,71 @@ body,
 
 .ql-editor a:hover {
   text-decoration: underline !important;
+}
+
+/* Lists: preflight strips list markers, and Quill draws its own via
+   `li > .ql-ui::before`, which preflight's `::before` reset flattens. */
+.ql-editor ol {
+  padding-left: 1.5em;
+}
+
+.ql-editor li {
+  list-style-type: none;
+  padding-left: 1.5em;
+  position: relative;
+}
+
+.ql-editor li > .ql-ui::before {
+  display: inline-block;
+  margin-left: -1.5em;
+  margin-right: 0.3em;
+  text-align: right;
+  white-space: nowrap;
+  width: 1.2em;
+}
+
+.ql-editor blockquote {
+  border-left: 4px solid hsl(var(--border));
+  padding-left: 12px;
+  margin: 4px 0;
+  color: hsl(var(--muted-foreground));
+}
+
+.ql-editor code,
+.ql-editor .ql-code-block-container {
+  background-color: hsl(var(--muted));
+  color: hsl(var(--foreground));
+  border-radius: 4px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.ql-editor code {
+  font-size: 85%;
+  padding: 2px 4px;
+}
+
+.ql-editor .ql-code-block-container {
+  margin: 4px 0;
+  padding: 6px 10px;
+  overflow-x: auto;
+}
+
+/* Mention chips inserted by the `@` autocomplete or by the AI reply. */
+.ql-editor .ql-mention-member,
+.ql-editor .ql-mention-ai {
+  border-radius: 4px;
+  padding: 0 2px;
+  font-weight: 600;
+}
+
+.ql-editor .ql-mention-member {
+  color: #1264a3;
+  background-color: rgba(18, 100, 163, 0.12);
+}
+
+.ql-editor .ql-mention-ai {
+  color: #8b5cf6;
+  background-color: rgba(139, 92, 246, 0.14);
 }
 
 .ql-renderer {
@@ -127,6 +243,30 @@ body,
   font-size: 14px !important;
   font-weight: 400 !important;
   @apply truncate;
+}
+
+/* The link tooltip is absolutely positioned inside `.ql-container`, so the
+   composer cannot clip its overflow. Theme it too, or it renders white on
+   white in dark mode. */
+.ql-snow .ql-tooltip {
+  z-index: 30;
+  background-color: hsl(var(--popover)) !important;
+  color: hsl(var(--popover-foreground)) !important;
+  border: 1px solid hsl(var(--border)) !important;
+  border-radius: calc(var(--radius) - 2px);
+  box-shadow: 0 4px 12px rgb(0 0 0 / 0.15) !important;
+  white-space: nowrap;
+}
+
+.ql-snow .ql-tooltip input[type="text"] {
+  background-color: hsl(var(--background));
+  border: 1px solid hsl(var(--border)) !important;
+  border-radius: 4px;
+  color: hsl(var(--foreground));
+}
+
+.ql-snow .ql-tooltip a {
+  color: #1264a3 !important;
 }
 
 .messages-scrollbar {

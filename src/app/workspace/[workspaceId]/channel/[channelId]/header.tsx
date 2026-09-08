@@ -7,6 +7,8 @@ import { FaChevronDown } from "react-icons/fa";
 import { useUpdateChannel } from "@/features/channels/api/use-update-channel";
 import { useRemoveChannel } from "@/features/channels/api/use-remove-channel";
 import { useCurrentMember } from "@/features/members/api/use-current-member";
+import { SummarizeButton } from "@/features/messages/components/summarize-button";
+import { HuddleButton } from "@/features/calls/components/huddle-button";
 
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -160,6 +162,10 @@ export const Header = ({ title }: HeaderProps) => {
           </div>
         </DialogContent>
       </Dialog>
+      <div className="ml-auto flex shrink-0 items-center gap-x-1">
+        <HuddleButton title={`# ${title}`} channelId={channelId} />
+        <SummarizeButton title={`# ${title}`} channelId={channelId} />
+      </div>
     </div>
   );
 };

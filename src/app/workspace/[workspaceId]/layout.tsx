@@ -4,6 +4,7 @@ import { Loader } from "lucide-react";
 
 import { Thread } from "@/features/messages/components/thread";
 import { Profile } from "@/features/members/components/profile";
+import { CallDock } from "@/features/calls/components/call-dock";
 
 import { useEnsureBotMember } from "@/features/members/api/use-ensure-bot-member";
 import { useCreateOrGetConversation } from "@/features/conversations/api/use-create-or-get-conversation";
@@ -104,6 +105,7 @@ const WorkspaceIdLayout = ({ children }: WorkspaceIdLayoutProps) => {
           )}
         </ResizablePanelGroup>
       </div>
+      <CallDock />
     </div>
   );
 };
