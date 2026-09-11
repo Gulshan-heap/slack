@@ -1,4 +1,4 @@
-# Slack Clone
+# Collaboratory Team Platform
 
 A real-time team messaging app built with Next.js and Convex — workspaces, channels, DMs, threads, huddles, and an AI assistant baked into the chat itself.
 
